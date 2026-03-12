@@ -1,0 +1,962 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Universal BOM Generator — bom.lackofabetter.work</title>
+<meta name="description" content="One script. Every OS. Generates SBOM, CBOM & HBOM in CycloneDX or SPDX with auto-installed dependencies and vulnerability scanning."/>
+<link rel="canonical" href="https://bom.lackofabetter.work"/>
+<meta property="og:title" content="Universal BOM Generator"/>
+<meta property="og:description" content="One script. Every OS. SBOM · CBOM · HBOM in CycloneDX & SPDX."/>
+<meta property="og:url" content="https://bom.lackofabetter.work"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Geist+Mono:wght@400;500&family=Geist:wght@300;400;500&display=swap" rel="stylesheet"/>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* ── Dark theme (default) ── */
+:root {
+  --bg:        #09090b;
+  --surface:   #111115;
+  --border:    #1e1e24;
+  --border-hi: #2e2e38;
+  --ink:       #e8e8ea;
+  --ink-2:     #7a7a88;
+  --ink-3:     #3a3a46;
+  --green:     #a8ff78;
+  --green-dim: #2a5a1a;
+  --blue:      #78b8ff;
+  --orange:    #ffb878;
+  --nav-bg:    rgba(9,9,11,.9);
+  --copy-hover:#111a10;
+  --mono:      'Geist Mono', monospace;
+  --sans:      'Geist', sans-serif;
+  --display:   'Bebas Neue', sans-serif;
+}
+
+/* ── Light theme ── */
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg:        #f8f8f6;
+    --surface:   #efefec;
+    --border:    #ddddd8;
+    --border-hi: #c8c8c2;
+    --ink:       #18181a;
+    --ink-2:     #52525c;
+    --ink-3:     #9898a2;
+    --green:     #1e6e10;
+    --green-dim: #b4e8a0;
+    --blue:      #1a50a0;
+    --orange:    #a04c10;
+    --nav-bg:    rgba(248,248,246,.92);
+    --copy-hover:#eaf5e4;
+  }
+}
+
+html { scroll-behavior: smooth; }
+body {
+  font-family: var(--sans);
+  background: var(--bg);
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ─── NAV ─────────────────────────────────────────────────── */
+nav {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 50;
+  height: 52px;
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 40px;
+  background: var(--nav-bg);
+  backdrop-filter: blur(14px);
+  border-bottom: 1px solid var(--border);
+}
+.nav-logo {
+  font-family: var(--mono); font-size: .7rem;
+  letter-spacing: .2em; text-transform: uppercase;
+  color: var(--ink-2); text-decoration: none;
+}
+.nav-links { display: flex; align-items: center; gap: 28px; }
+.nav-links a {
+  font-family: var(--mono); font-size: .65rem;
+  letter-spacing: .1em; text-transform: uppercase;
+  color: var(--ink-3); text-decoration: none;
+  transition: color .15s;
+}
+.nav-links a:hover { color: var(--ink-2); }
+.nav-version {
+  font-family: var(--mono); font-size: .62rem;
+  color: var(--green); border: 1px solid var(--green-dim);
+  padding: 2px 9px; border-radius: 3px; letter-spacing: .1em;
+}
+
+/* ─── HERO ─────────────────────────────────────────────────── */
+.hero {
+  min-height: 100vh;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  padding: 80px 24px 72px;
+  text-align: center;
+}
+
+/* Glowing title — the TV-glow effect */
+.hero-title {
+  font-family: var(--display);
+  font-size: clamp(5rem, 18vw, 13rem);
+  line-height: .88;
+  letter-spacing: .03em;
+  color: #fff;
+  /* layered text-shadows create the CRT bloom */
+  text-shadow:
+    0 0 20px rgba(168,255,120,.28),
+    0 0 60px rgba(168,255,120,.12),
+    0 0 120px rgba(168,255,120,.06),
+    0 0 240px rgba(100,220,60,.04);
+  animation: glow-breathe 4s ease-in-out infinite;
+  margin-bottom: 4px;
+}
+.hero-title .word-bom {
+  color: var(--green);
+  text-shadow:
+    0 0 16px rgba(168,255,120,.45),
+    0 0 40px rgba(168,255,120,.22),
+    0 0 100px rgba(168,255,120,.10),
+    0 0 200px rgba(100,220,60,.05);
+}
+
+/* ── Light mode: softer glow on title ── */
+@media (prefers-color-scheme: light) {
+  .hero-title {
+    color: #1a1a1e;
+    text-shadow:
+      0 0 20px rgba(30,110,16,.2),
+      0 0 60px rgba(30,110,16,.08);
+  }
+  .hero-title .word-bom {
+    text-shadow:
+      0 0 16px rgba(30,110,16,.35),
+      0 0 40px rgba(30,110,16,.14);
+  }
+  .term-dot:nth-child(1){ background: #e05040; }
+  .term-dot:nth-child(2){ background: #e0a020; }
+  .term-dot:nth-child(3){ background: #28b030; }
+}
+
+@keyframes glow-breathe {
+  0%, 100% { filter: brightness(1); }
+  50%       { filter: brightness(1.04); }
+}
+
+.hero-sub {
+  font-family: var(--display);
+  font-size: clamp(1.4rem, 4vw, 2.8rem);
+  letter-spacing: .2em;
+  color: var(--ink-2);
+  margin-bottom: 32px;
+}
+
+.hero-desc {
+  font-size: .95rem; line-height: 1.75;
+  color: var(--ink-2); font-weight: 300;
+  max-width: 480px; margin: 0 auto 40px;
+}
+
+/* OS pills */
+.pills {
+  display: flex; gap: 8px; justify-content: center;
+  flex-wrap: wrap; margin-bottom: 44px;
+}
+.pill {
+  font-family: var(--mono); font-size: .62rem;
+  letter-spacing: .1em; text-transform: uppercase;
+  border: 1px solid var(--border-hi);
+  padding: 5px 14px; border-radius: 99px;
+  color: var(--ink-2);
+}
+
+/* Terminal */
+.terminal {
+  width: 100%; max-width: 620px;
+  background: var(--surface);
+  border: 1px solid var(--border-hi);
+  border-radius: 8px; overflow: hidden;
+  text-align: left;
+}
+.term-bar {
+  display: flex; align-items: center; gap: 7px;
+  padding: 10px 14px;
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+}
+.term-dot { width: 11px; height: 11px; border-radius: 50%; }
+.term-dot:nth-child(1){ background: #ff5f56; }
+.term-dot:nth-child(2){ background: #ffbd2e; }
+.term-dot:nth-child(3){ background: #27c93f; }
+.term-label {
+  font-family: var(--mono); font-size: .6rem;
+  color: var(--ink-3); letter-spacing: .08em;
+  margin-left: 6px;
+}
+.term-body { padding: 18px 20px; display: flex; flex-direction: column; gap: 7px; }
+.term-line {
+  font-family: var(--mono); font-size: .78rem;
+  line-height: 1.5; display: flex; gap: 10px; align-items: flex-start;
+}
+.t-p  { color: var(--green); flex-shrink: 0; user-select: none; }
+.t-c  { color: var(--ink-3); }        /* comment */
+.t-k  { color: var(--ink); }          /* command */
+.t-g  { color: var(--green); }        /* keyword / tool */
+.t-b  { color: var(--blue); }         /* url / path */
+.t-o  { color: var(--orange); }       /* arg */
+
+/* copy button */
+.copy-btn {
+  width: 100%; max-width: 620px;
+  margin-top: 10px;
+  font-family: var(--mono); font-size: .72rem;
+  letter-spacing: .06em;
+  background: var(--surface);
+  border: 1px solid var(--border-hi);
+  color: var(--green);
+  padding: 11px 18px;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  transition: border-color .15s, background .15s;
+  text-align: left;
+}
+.copy-btn:hover { border-color: var(--green-dim); background: var(--copy-hover); }
+.copy-btn span { flex: 1; word-break: break-all; color: var(--ink-2); }
+
+/* download button */
+.dl-btn {
+  width: 100%; max-width: 620px;
+  margin-top: 8px;
+  font-family: var(--mono); font-size: .72rem;
+  letter-spacing: .06em;
+  background: transparent;
+  border: 1px solid var(--border-hi);
+  color: var(--ink-2);
+  padding: 11px 18px;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  transition: border-color .15s, color .15s, background .15s;
+  text-decoration: none;
+}
+.dl-btn:hover {
+  border-color: var(--border-hi);
+  color: var(--ink);
+  background: var(--surface);
+}
+
+/* ─── SECTIONS ─────────────────────────────────────────────── */
+.section { padding: 88px 0; border-top: 1px solid var(--border); }
+.wrap    { max-width: 960px; margin: 0 auto; padding: 0 40px; }
+
+.eyebrow {
+  font-family: var(--mono); font-size: .62rem;
+  letter-spacing: .18em; text-transform: uppercase;
+  color: var(--ink-3); margin-bottom: 12px;
+}
+h2 {
+  font-family: var(--display);
+  font-size: clamp(2.2rem, 4vw, 3.6rem);
+  letter-spacing: .05em; line-height: 1;
+  color: var(--ink); margin-bottom: 16px;
+}
+.section-desc {
+  font-size: .9rem; line-height: 1.75;
+  color: var(--ink-2); font-weight: 300;
+  max-width: 520px; margin-bottom: 48px;
+}
+
+/* ─── BOM CARDS ────────────────────────────────────────────── */
+.bom-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+.bom-card {
+  border: 1px solid var(--border);
+  border-radius: 8px; padding: 28px 24px;
+  background: var(--surface);
+  transition: border-color .2s;
+}
+.bom-card:hover { border-color: var(--border-hi); }
+.bom-card.sbom:hover { border-color: #1a4a8a; }
+.bom-card.cbom:hover { border-color: var(--green-dim); }
+.bom-card.hbom:hover { border-color: #7a4a1a; }
+
+.card-icon { font-size: 1.4rem; margin-bottom: 16px; display: block; }
+.card-name {
+  font-family: var(--display); font-size: 1.8rem;
+  letter-spacing: .06em; color: var(--ink);
+  margin-bottom: 2px;
+}
+.card-full {
+  font-family: var(--mono); font-size: .58rem;
+  letter-spacing: .1em; text-transform: uppercase;
+  margin-bottom: 14px;
+}
+.bom-card.sbom .card-full { color: var(--blue); }
+.bom-card.cbom .card-full { color: var(--green); }
+.bom-card.hbom .card-full { color: var(--orange); }
+
+.card-desc { font-size: .84rem; line-height: 1.7; color: var(--ink-2); font-weight: 300; }
+.card-tags { margin-top: 16px; display: flex; flex-wrap: wrap; gap: 5px; }
+.card-tag {
+  font-family: var(--mono); font-size: .55rem;
+  letter-spacing: .07em; text-transform: uppercase;
+  border: 1px solid var(--border-hi);
+  padding: 2px 8px; border-radius: 3px; color: var(--ink-3);
+}
+
+/* ─── FORMAT TABLE ─────────────────────────────────────────── */
+.fmt-table { width: 100%; border-collapse: collapse; }
+.fmt-table thead tr {
+  border-bottom: 1px solid var(--border-hi);
+}
+.fmt-table th {
+  font-family: var(--mono); font-size: .6rem;
+  letter-spacing: .12em; text-transform: uppercase;
+  color: var(--ink-3); font-weight: 400;
+  padding: 0 16px 14px 0; text-align: left;
+}
+.fmt-table td {
+  font-size: .85rem; padding: 14px 16px 14px 0;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+  color: var(--ink-2); font-weight: 300;
+}
+.fmt-table tbody tr:last-child td { border-bottom: none; }
+.fmt-flag {
+  font-family: var(--mono); font-size: .72rem;
+  color: var(--green);
+}
+.fmt-ext {
+  font-family: var(--mono); font-size: .7rem;
+  color: var(--ink-3);
+}
+.fmt-badge {
+  display: inline-block;
+  font-family: var(--mono); font-size: .55rem;
+  letter-spacing: .08em; text-transform: uppercase;
+  border: 1px solid var(--green-dim);
+  color: var(--green); padding: 1px 7px; border-radius: 3px;
+  margin-left: 6px; vertical-align: middle;
+}
+
+/* ─── STEPS ─────────────────────────────────────────────────── */
+.steps { display: flex; flex-direction: column; }
+.step {
+  display: grid; grid-template-columns: 52px 1fr;
+  gap: 20px; padding: 28px 0;
+  border-bottom: 1px solid var(--border);
+}
+.step:last-child { border-bottom: none; }
+.step-n {
+  font-family: var(--mono); font-size: .65rem;
+  color: var(--ink-3); letter-spacing: .08em;
+  padding-top: 3px;
+}
+.step-body h3 {
+  font-size: .88rem; font-weight: 500;
+  color: var(--ink); margin-bottom: 8px;
+}
+.step-body p {
+  font-size: .84rem; line-height: 1.75;
+  color: var(--ink-2); font-weight: 300;
+}
+.step-body code {
+  font-family: var(--mono); font-size: .76em;
+  background: var(--surface); border: 1px solid var(--border-hi);
+  color: var(--green); padding: 1px 6px; border-radius: 3px;
+}
+.step-chips { margin-top: 10px; display: flex; gap: 6px; flex-wrap: wrap; }
+.chip {
+  font-family: var(--mono); font-size: .56rem;
+  letter-spacing: .07em; text-transform: uppercase;
+  border: 1px solid var(--border); padding: 2px 8px;
+  border-radius: 3px; color: var(--ink-3);
+}
+
+/* ─── USAGE ──────────────────────────────────────────────────── */
+.usage-grid { display: flex; flex-direction: column; gap: 2px; }
+.usage-row {
+  display: grid; grid-template-columns: 100px 1fr;
+  gap: 16px; align-items: center;
+  padding: 12px 16px;
+  border-radius: 6px;
+  transition: background .15s;
+}
+.usage-row:hover { background: var(--surface); }
+.usage-mode {
+  font-family: var(--mono); font-size: .6rem;
+  letter-spacing: .08em; text-transform: uppercase;
+  padding: 2px 10px; border-radius: 3px; text-align: center;
+}
+.m-all    { background: rgba(168,255,120,.08); color: var(--green);  border: 1px solid rgba(168,255,120,.2); }
+.m-sbom   { background: rgba(120,184,255,.08); color: var(--blue);   border: 1px solid rgba(120,184,255,.2); }
+.m-cbom   { background: rgba(168,255,120,.06); color: var(--green);  border: 1px solid rgba(168,255,120,.15); }
+.m-hbom   { background: rgba(255,184,120,.08); color: var(--orange); border: 1px solid rgba(255,184,120,.2); }
+.m-oneliner { background: rgba(100,100,120,.08); color: var(--ink-2); border: 1px solid var(--border-hi); }
+
+.usage-cmd {
+  font-family: var(--mono); font-size: .76rem;
+  color: var(--ink-2); line-height: 1.5;
+}
+.usage-cmd .ug { color: var(--green); }
+.usage-cmd .ub { color: var(--blue); }
+.usage-cmd .uo { color: var(--orange); }
+
+/* ─── OUTPUT REFERENCE ──────────────────────────────────────── */
+.output-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+}
+.output-card {
+  border: 1px solid var(--border);
+  border-radius: 8px; padding: 20px 20px 16px;
+}
+.output-card h4 {
+  font-family: var(--mono); font-size: .65rem;
+  letter-spacing: .12em; text-transform: uppercase;
+  color: var(--ink-3); margin-bottom: 14px;
+}
+.output-card ul { list-style: none; display: flex; flex-direction: column; gap: 6px; }
+.output-card li {
+  font-family: var(--mono); font-size: .72rem;
+  color: var(--ink-3); display: flex; align-items: flex-start; gap: 8px;
+  padding-bottom: 6px; border-bottom: 1px solid var(--border);
+  line-height: 1.5;
+}
+.output-card li:last-child { border-bottom: none; padding-bottom: 0; }
+.output-card li::before { content: '›'; color: var(--green); flex-shrink: 0; }
+.output-card li span { color: var(--ink-2); }
+
+/* ─── FOOTER ─────────────────────────────────────────────────── */
+footer {
+  border-top: 1px solid var(--border);
+  padding: 32px 0; text-align: center;
+}
+footer p {
+  font-family: var(--mono); font-size: .65rem;
+  letter-spacing: .06em; color: var(--ink-3);
+}
+footer a { color: var(--ink-2); text-decoration: none; }
+footer a:hover { color: var(--ink); }
+
+/* ─── MADE WITH CLAUDE ──────────────────────────────────────── */
+.claude-card {
+  border: 1px solid var(--border-hi);
+  border-radius: 8px; overflow: hidden;
+  margin-bottom: 24px;
+}
+.claude-card-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 18px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+}
+.claude-logo {
+  font-family: var(--mono); font-size: .65rem;
+  letter-spacing: .1em; text-transform: uppercase;
+  color: var(--ink-2);
+  display: flex; align-items: center; gap: 7px;
+}
+.claude-logo svg { color: var(--green); flex-shrink: 0; }
+.prompt-copy-btn {
+  font-family: var(--mono); font-size: .62rem;
+  letter-spacing: .08em; text-transform: uppercase;
+  background: transparent;
+  border: 1px solid var(--border-hi);
+  color: var(--ink-3); padding: 4px 12px;
+  border-radius: 3px; cursor: pointer;
+  display: flex; align-items: center; gap: 6px;
+  transition: color .15s, border-color .15s;
+}
+.prompt-copy-btn:hover { color: var(--ink); border-color: var(--ink-3); }
+
+.claude-prompt {
+  padding: 24px 24px 20px;
+  display: flex; flex-direction: column; gap: 14px;
+}
+.claude-prompt p {
+  font-size: .88rem; line-height: 1.8;
+  color: var(--ink-2); font-weight: 300;
+}
+.claude-prompt strong { color: var(--ink); font-weight: 500; }
+.claude-prompt ul {
+  list-style: none;
+  display: flex; flex-direction: column; gap: 7px;
+  padding-left: 4px;
+}
+.claude-prompt li {
+  font-size: .87rem; line-height: 1.75;
+  color: var(--ink-2); font-weight: 300;
+  display: flex; gap: 10px; align-items: flex-start;
+}
+.claude-prompt li::before {
+  content: '–'; color: var(--green);
+  flex-shrink: 0; margin-top: 1px;
+}
+.claude-prompt code {
+  font-family: var(--mono); font-size: .76em;
+  background: var(--surface); border: 1px solid var(--border-hi);
+  color: var(--green); padding: 1px 6px; border-radius: 3px;
+}
+.claude-note {
+  font-family: var(--mono); font-size: .7rem;
+  letter-spacing: .04em; line-height: 1.7;
+  color: var(--ink-3); margin-top: 4px;
+}
+.claude-note a { color: var(--ink-2); text-decoration: none; }
+.claude-note a:hover { color: var(--ink); }
+
+/* ─── SCROLL REVEAL ─────────────────────────────────────────── */
+.reveal {
+  opacity: 0; transform: translateY(20px);
+  transition: opacity .55s ease, transform .55s ease;
+}
+.reveal.in { opacity: 1; transform: none; }
+
+/* ─── RESPONSIVE ────────────────────────────────────────────── */
+@media (max-width: 720px) {
+  nav { padding: 0 20px; }
+  .wrap { padding: 0 20px; }
+  .bom-grid { grid-template-columns: 1fr; }
+  .output-grid { grid-template-columns: 1fr; }
+  .step { grid-template-columns: 36px 1fr; gap: 14px; }
+  .usage-row { grid-template-columns: 76px 1fr; }
+  .fmt-table th:nth-child(3),
+  .fmt-table td:nth-child(3) { display: none; }
+}
+</style>
+</head>
+<body>
+
+<!-- ─── NAV ─────────────────────────────────────────────────── -->
+<nav>
+  <a class="nav-logo" href="#">BOM Generator</a>
+  <div class="nav-links">
+    <a href="#bom-types">Types</a>
+    <a href="#formats">Formats</a>
+    <a href="#how-it-works">Pipeline</a>
+    <a href="#usage">Usage</a>
+    <a href="#made-with-claude">Claude</a>
+    <span class="nav-version">v2.0</span>
+  </div>
+</nav>
+
+<!-- ─── HERO ─────────────────────────────────────────────────── -->
+<section class="hero">
+  <h1 class="hero-title">UNIVERSAL<br><span class="word-bom">BOM</span></h1>
+  <div class="hero-sub">Generator</div>
+  <p class="hero-desc">
+    One script. Every OS. Generates SBOM, CBOM &amp; HBOM in
+    CycloneDX or SPDX — with auto-installed dependencies,
+    vulnerability scanning, and hardware inventory.
+  </p>
+
+  <div class="pills">
+    <span class="pill">macOS</span>
+    <span class="pill">Linux — apt · dnf · pacman</span>
+    <span class="pill">Windows — Git Bash · WSL</span>
+  </div>
+
+  <div class="terminal">
+    <div class="term-bar">
+      <span class="term-dot"></span>
+      <span class="term-dot"></span>
+      <span class="term-dot"></span>
+      <span class="term-label">generate_bom.sh [TARGET_DIR] [MODE] [FORMAT]</span>
+    </div>
+    <div class="term-body">
+      <div class="term-line">
+        <span class="t-p">$</span>
+        <span class="t-k"><span class="t-g">bash</span> generate_bom.sh <span class="t-o">.</span> <span class="t-g">all</span> <span class="t-b">cyclonedx-json</span></span>
+      </div>
+      <div class="term-line">
+        <span class="t-p">#</span>
+        <span class="t-c">SBOM only · SPDX JSON output</span>
+      </div>
+      <div class="term-line">
+        <span class="t-p">$</span>
+        <span class="t-k"><span class="t-g">bash</span> generate_bom.sh <span class="t-o">/srv/app</span> <span class="t-g">sbom</span> <span class="t-b">spdx-json</span></span>
+      </div>
+      <div class="term-line">
+        <span class="t-p">#</span>
+        <span class="t-c">HBOM only · CycloneDX XML</span>
+      </div>
+      <div class="term-line">
+        <span class="t-p">$</span>
+        <span class="t-k"><span class="t-g">bash</span> generate_bom.sh <span class="t-o">.</span> <span class="t-g">hbom</span> <span class="t-b">cyclonedx-xml</span></span>
+      </div>
+    </div>
+  </div>
+
+  <button class="copy-btn" onclick="copyCmd(this)">
+    <span>curl -fsSL https://bom.lackofabetter.work/generate_bom.sh | bash</span>
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0;opacity:.5"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+  </button>
+  <a class="dl-btn" href="https://bom.lackofabetter.work/generate_bom.sh" download="generate_bom.sh">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+    Download generate_bom.sh
+  </a>
+</section>
+
+<!-- ─── BOM TYPES ─────────────────────────────────────────────── -->
+<section class="section" id="bom-types">
+  <div class="wrap">
+    <div class="eyebrow reveal">BOM Types</div>
+    <h2 class="reveal">Three layers of inventory</h2>
+    <p class="section-desc reveal">Run them individually or all at once. Each captures a different layer of your system.</p>
+
+    <div class="bom-grid">
+      <div class="bom-card sbom reveal">
+        <span class="card-icon">📦</span>
+        <div class="card-name">SBOM</div>
+        <div class="card-full">Software Bill of Materials</div>
+        <p class="card-desc">Scans a directory with Syft to catalog every package and dependency. Vulnerability-scanned immediately via Grype.</p>
+        <div class="card-tags">
+          <span class="card-tag">Syft</span>
+          <span class="card-tag">Grype</span>
+          <span class="card-tag">CVE Scan</span>
+          <span class="card-tag">NTIA-compliant</span>
+        </div>
+      </div>
+
+      <div class="bom-card cbom reveal">
+        <span class="card-icon">🔐</span>
+        <div class="card-name">CBOM</div>
+        <div class="card-full">Cryptography Bill of Materials</div>
+        <p class="card-desc">Discovers TLS certs, private keys, JWKs, GPG keyrings, Java keystores, and source-level crypto references (AES, RSA, ECDSA, SHA-256, Ed25519). IBM Analyzer ready.</p>
+        <div class="card-tags">
+          <span class="card-tag">CycloneDX 1.5</span>
+          <span class="card-tag">IBM Analyzer</span>
+          <span class="card-tag">Key Detection</span>
+          <span class="card-tag">Cert Scan</span>
+        </div>
+      </div>
+
+      <div class="bom-card hbom reveal">
+        <span class="card-icon">🖥</span>
+        <div class="card-name">HBOM</div>
+        <div class="card-full">Hardware Bill of Materials</div>
+        <p class="card-desc">Inventories CPU, RAM slots, disks, GPUs, NICs with MACs, firmware/BIOS version, and USB peripherals using native OS APIs on each platform.</p>
+        <div class="card-tags">
+          <span class="card-tag">CPU · RAM · Disk</span>
+          <span class="card-tag">GPU · NIC</span>
+          <span class="card-tag">Firmware</span>
+          <span class="card-tag">USB Peripherals</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── FORMATS ───────────────────────────────────────────────── -->
+<section class="section" id="formats">
+  <div class="wrap">
+    <div class="eyebrow reveal">Output Formats</div>
+    <h2 class="reveal">Four output formats</h2>
+    <p class="section-desc reveal">Pass the format as the third argument. All three BOM types support all four formats.</p>
+
+    <table class="fmt-table reveal">
+      <thead>
+        <tr>
+          <th>Flag</th>
+          <th>Format</th>
+          <th>Extension</th>
+          <th>Notes</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><span class="fmt-flag">cyclonedx-json</span></td>
+          <td>CycloneDX 1.5 JSON <span class="fmt-badge">default</span></td>
+          <td><span class="fmt-ext">.cdx.json</span></td>
+          <td>IBM CBOM Analyzer, Dependency-Track, all modern tooling</td>
+        </tr>
+        <tr>
+          <td><span class="fmt-flag">cyclonedx-xml</span></td>
+          <td>CycloneDX 1.5 XML</td>
+          <td><span class="fmt-ext">.cdx.xml</span></td>
+          <td>Legacy enterprise tools and XML-native pipelines</td>
+        </tr>
+        <tr>
+          <td><span class="fmt-flag">spdx-json</span></td>
+          <td>SPDX 2.3 JSON</td>
+          <td><span class="fmt-ext">.spdx.json</span></td>
+          <td>Government &amp; DoD compliance. Includes package purpose field</td>
+        </tr>
+        <tr>
+          <td><span class="fmt-flag">spdx-tag</span></td>
+          <td>SPDX 2.3 Tag-Value</td>
+          <td><span class="fmt-ext">.spdx.tv</span></td>
+          <td>Human-readable, diffable, great for source control</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ─── PIPELINE ──────────────────────────────────────────────── -->
+<section class="section" id="how-it-works">
+  <div class="wrap">
+    <div class="eyebrow reveal">Pipeline</div>
+    <h2 class="reveal">How it works</h2>
+    <p class="section-desc reveal">Six stages, zero manual configuration. Everything from tool installation to format conversion is handled automatically.</p>
+
+    <div class="steps">
+
+      <div class="step reveal">
+        <div class="step-n">01</div>
+        <div class="step-body">
+          <h3>OS &amp; package manager detection</h3>
+          <p>Detects macOS, Linux, or Windows (Git Bash / WSL) via <code>uname -s</code>. Selects Homebrew, apt, dnf, pacman, or winget automatically. Apple Silicon brew paths handled.</p>
+          <div class="step-chips">
+            <span class="chip">macOS · Homebrew</span>
+            <span class="chip">apt · dnf · pacman</span>
+            <span class="chip">winget · WSL</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="step reveal">
+        <div class="step-n">02</div>
+        <div class="step-body">
+          <h3>Self-installing dependencies + isolated venv</h3>
+          <p>Installs <code>syft</code>, <code>grype</code>, and <code>python3</code> if missing. All Python packages (<code>cyclonedx-python-lib</code>) go into an isolated venv at <code>/tmp/bom_venv_$$</code> — your system Python is never touched. The venv and all temp files are automatically cleaned up on exit via a <code>trap cleanup EXIT</code>.</p>
+          <div class="step-chips">
+            <span class="chip">Syft</span>
+            <span class="chip">Grype</span>
+            <span class="chip">Python venv (isolated)</span>
+            <span class="chip">Auto cleanup on exit</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="step reveal">
+        <div class="step-n">03</div>
+        <div class="step-body">
+          <h3>SBOM via Syft + Grype</h3>
+          <p>Runs <code>syft dir:TARGET -o FORMAT</code> — Syft handles all four output formats natively. The SBOM is immediately passed into <code>grype sbom:FILE -o json</code> for a matching CVE vulnerability report.</p>
+          <div class="step-chips">
+            <span class="chip">syft dir:TARGET -o FORMAT</span>
+            <span class="chip">grype sbom:FILE -o json</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="step reveal">
+        <div class="step-n">04</div>
+        <div class="step-body">
+          <h3>CBOM — crypto asset discovery</h3>
+          <p>Collects installed packages and filters for crypto libraries (openssl, libssl, bcrypt, gnupg, libsodium …). Simultaneously scans target for <code>*.pem</code>, <code>*.key</code>, <code>*.jwk</code>, <code>*.gpg</code>, <code>*.jks</code>, <code>id_rsa</code>, <code>id_ed25519</code>, and source files referencing AES, RSA, ECDSA, SHA-256, SHA-512, Ed25519. Output is CycloneDX 1.5 JSON, then converted to your chosen format.</p>
+          <div class="step-chips">
+            <span class="chip">Cert · Key · JWK · GPG · JKS</span>
+            <span class="chip">Source crypto scanning</span>
+            <span class="chip">IBM CBOM Analyzer</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="step reveal">
+        <div class="step-n">05</div>
+        <div class="step-body">
+          <h3>HBOM — hardware inventory</h3>
+          <p>Uses OS-native APIs: <code>system_profiler</code> on macOS, <code>/proc</code> + <code>lsblk</code> + <code>lspci</code> + <code>dmidecode</code> on Linux/WSL, <code>wmic</code> on Windows. Serialised as CycloneDX <code>DEVICE</code> and <code>FIRMWARE</code> components.</p>
+          <div class="step-chips">
+            <span class="chip">system_profiler</span>
+            <span class="chip">lsblk · lspci · dmidecode</span>
+            <span class="chip">wmic</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="step reveal">
+        <div class="step-n">06</div>
+        <div class="step-body">
+          <h3>Format conversion + timestamped output</h3>
+          <p>CBOM and HBOM always write <code>.cdx.json</code> first, then the built-in Python converter produces CycloneDX XML, SPDX JSON, or SPDX tag-value. Every run lands in a new <code>bom_output_YYYYMMDD-HHMMSS/</code> folder — nothing is overwritten.</p>
+          <div class="step-chips">
+            <span class="chip">bom_output_TIMESTAMP/</span>
+            <span class="chip">Non-destructive</span>
+            <span class="chip">Auto cleanup</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ─── USAGE ──────────────────────────────────────────────────── -->
+<section class="section" id="usage">
+  <div class="wrap">
+    <div class="eyebrow reveal">Examples</div>
+    <h2 class="reveal">Usage</h2>
+    <p class="section-desc reveal">Signature: <code style="font-family:var(--mono);font-size:.78em;color:var(--green);background:var(--surface);border:1px solid var(--border-hi);padding:2px 8px;border-radius:3px">generate_bom.sh [TARGET_DIR] [MODE] [FORMAT]</code> — all args optional, defaults to <code style="font-family:var(--mono);font-size:.78em;color:var(--ink-2);background:var(--surface);border:1px solid var(--border-hi);padding:2px 8px;border-radius:3px">. all cyclonedx-json</code></p>
+
+    <div class="usage-grid reveal">
+      <div class="usage-row">
+        <span class="usage-mode m-all">all</span>
+        <span class="usage-cmd"><span class="ug">bash</span> generate_bom.sh</span>
+      </div>
+      <div class="usage-row">
+        <span class="usage-mode m-sbom">sbom</span>
+        <span class="usage-cmd"><span class="ug">bash</span> generate_bom.sh <span class="uo">/srv/app</span> sbom <span class="ub">spdx-json</span></span>
+      </div>
+      <div class="usage-row">
+        <span class="usage-mode m-cbom">cbom</span>
+        <span class="usage-cmd"><span class="ug">bash</span> generate_bom.sh <span class="uo">.</span> cbom <span class="ub">cyclonedx-xml</span></span>
+      </div>
+      <div class="usage-row">
+        <span class="usage-mode m-hbom">hbom</span>
+        <span class="usage-cmd"><span class="ug">bash</span> generate_bom.sh <span class="uo">.</span> hbom <span class="ub">spdx-tag</span></span>
+      </div>
+      <div class="usage-row">
+        <span class="usage-mode m-all">all</span>
+        <span class="usage-cmd"><span class="ug">bash</span> generate_bom.sh <span class="uo">/my/project</span> all <span class="ub">spdx-json</span></span>
+      </div>
+      <div class="usage-row">
+        <span class="usage-mode m-oneliner">curl</span>
+        <span class="usage-cmd"><span class="ug">curl</span> -fsSL <span class="ub">https://bom.lackofabetter.work/generate_bom.sh</span> | <span class="ug">bash</span></span>
+      </div>
+    </div>
+
+    <!-- Output reference -->
+    <div style="margin-top: 56px">
+      <div class="eyebrow reveal" style="margin-bottom: 20px">Output Reference</div>
+      <div class="output-grid reveal">
+        <div class="output-card">
+          <h4>📦 SBOM</h4>
+          <ul>
+            <li><span>sbom-TIMESTAMP.{cdx.json · cdx.xml · spdx.json · spdx.tv}</span></li>
+            <li><span>sbom-vulnerabilities-TIMESTAMP.json</span> — Grype CVE report</li>
+          </ul>
+        </div>
+        <div class="output-card">
+          <h4>🔐 CBOM</h4>
+          <ul>
+            <li><span>cbom-TIMESTAMP.cdx.json</span> — always generated (IBM Analyzer base)</li>
+            <li><span>cbom-TIMESTAMP.{cdx.xml · spdx.json · spdx.tv}</span> — if converted</li>
+          </ul>
+        </div>
+        <div class="output-card">
+          <h4>🖥 HBOM</h4>
+          <ul>
+            <li><span>hbom-TIMESTAMP.cdx.json</span> — CycloneDX DEVICE / FIRMWARE</li>
+            <li><span>hbom-TIMESTAMP.{cdx.xml · spdx.json · spdx.tv}</span> — if converted</li>
+          </ul>
+        </div>
+        <div class="output-card">
+          <h4>📁 Folder structure</h4>
+          <ul>
+            <li>All files land in <span>bom_output_YYYYMMDD-HHMMSS/</span></li>
+            <li>Fresh folder per run — nothing overwritten</li>
+            <li>Temp venv &amp; files auto-removed on exit</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ─── MADE WITH CLAUDE ─────────────────────────────────────── -->
+<section class="section" id="made-with-claude">
+  <div class="wrap">
+    <div class="eyebrow reveal">Made with Claude</div>
+    <h2 class="reveal">Recreate this yourself</h2>
+    <p class="section-desc reveal">
+      This entire script was built through a conversation with
+      <a href="https://claude.ai" target="_blank" style="color:var(--green);text-decoration:none">Claude</a>.
+      Below is the prompt that produced it — paste it into Claude and you'll get the same result.
+    </p>
+
+    <div class="claude-card reveal">
+      <div class="claude-card-header">
+        <div class="claude-logo">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z" fill="currentColor"/>
+          </svg>
+          Claude · Sonnet
+        </div>
+        <button class="prompt-copy-btn" onclick="copyPrompt(this)">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          Copy prompt
+        </button>
+      </div>
+      <div class="claude-prompt" id="the-prompt">
+        <p>Write a single unified bash script called <code>generate_bom.sh</code> that generates three types of Bill of Materials — SBOM, CBOM, and HBOM — and works without modification on macOS, Linux (Debian/Ubuntu/RHEL/Arch), and Windows via Git Bash or WSL.</p>
+
+        <p>The script should accept three optional arguments: <code>[TARGET_DIR]</code> (default: current directory), <code>[MODE]</code> (sbom | cbom | hbom | all, default: all), and <code>[FORMAT]</code> (cyclonedx-json | cyclonedx-xml | spdx-json | spdx-tag, default: cyclonedx-json).</p>
+
+        <p><strong>Core requirements:</strong></p>
+        <ul>
+          <li>Auto-detect the OS and select the right package manager (Homebrew, apt, dnf, pacman, winget) — handle Apple Silicon brew paths automatically</li>
+          <li>Self-install all missing dependencies: Syft, Grype, Python 3. Install all Python packages into an isolated venv at <code>/tmp/bom_venv_$$</code> so the system Python is never touched</li>
+          <li>Use <code>trap cleanup EXIT</code> to remove the venv and all temp files automatically on exit</li>
+          <li>All output files land in a timestamped folder <code>bom_output_YYYYMMDD-HHMMSS/</code> inside the target directory — never overwrite previous runs</li>
+        </ul>
+
+        <p><strong>SBOM:</strong> Use Syft to scan the target directory. Pass the output format flag directly to Syft (it handles all four formats natively). Then run Grype against the SBOM to produce a separate vulnerabilities JSON report.</p>
+
+        <p><strong>CBOM (Cryptography BOM):</strong> Collect installed packages via the native package manager and filter for crypto-relevant ones (openssl, libssl, bcrypt, gnupg, libsodium, etc.). Also scan the target directory for cryptographic file assets: <code>*.pem</code>, <code>*.crt</code>, <code>*.key</code>, <code>*.pub</code>, <code>*.jwk</code>, <code>*.gpg</code>, <code>*.jks</code>, <code>id_rsa</code>, <code>id_ed25519</code>, and source files referencing AES, RSA, ECDSA, SHA-256, SHA-512, Ed25519. Output must be CycloneDX 1.5 JSON compatible with the IBM CBOM Analyzer at zurich.ibm.com/cbom. Use <code>cyclonedx-python-lib</code> inside the venv to build and serialise the BOM.</p>
+
+        <p><strong>HBOM (Hardware BOM):</strong> Collect hardware inventory using OS-native APIs — <code>system_profiler</code> on macOS, <code>/proc/cpuinfo</code> + <code>lsblk</code> + <code>lspci</code> + <code>dmidecode</code> on Linux/WSL, and <code>wmic</code> on Windows. Capture CPU model/cores/threads, RAM slots, disk drives, GPUs, NICs with MAC addresses, firmware/BIOS version, and USB peripherals. Serialise as CycloneDX DEVICE and FIRMWARE component types.</p>
+
+        <p><strong>Format conversion:</strong> SBOM uses Syft's native format support. CBOM and HBOM always generate CycloneDX JSON first, then a built-in Python converter produces CycloneDX XML, SPDX 2.3 JSON (with primaryPackagePurpose), or SPDX 2.3 tag-value as requested.</p>
+
+        <p>Use colour-coded terminal output (<code>[•]</code> info, <code>[✔]</code> success, <code>[!]</code> warn, <code>[✘]</code> error) and print a summary table of generated files with sizes at the end.</p>
+      </div>
+    </div>
+
+    <p class="claude-note reveal">
+      You can also extend it — ask Claude to add Docker image scanning, container SBOM support, CI/CD integration, or automatic upload to Dependency-Track.
+    </p>
+  </div>
+</section>
+
+<!-- ─── FOOTER ────────────────────────────────────────────────── -->
+<footer>
+  <div class="wrap">
+    <p>Open Source · MIT · <a href="https://github.com/YOUR_USER/bom-generator" target="_blank">GitHub</a> &nbsp;·&nbsp; <a href="https://bom.lackofabetter.work">bom.lackofabetter.work</a> &nbsp;·&nbsp; CycloneDX 1.5 · SPDX 2.3</p>
+  </div>
+</footer>
+
+<script>
+// Scroll reveal
+const obs = new IntersectionObserver(entries => {
+  entries.forEach((e, i) => {
+    if (e.isIntersecting)
+      setTimeout(() => e.target.classList.add('in'), i * 60);
+  });
+}, { threshold: 0.1 });
+document.querySelectorAll('.reveal').forEach(el => obs.observe(el));
+
+// Copy prompt text
+function copyPrompt(btn) {
+  const el = document.getElementById('the-prompt');
+  const text = el.innerText;
+  navigator.clipboard.writeText(text).then(() => {
+    const orig = btn.innerHTML;
+    btn.innerHTML = '✔ Copied!';
+    setTimeout(() => btn.innerHTML = orig, 2000);
+  });
+}
+function copyCmd(btn) {
+  navigator.clipboard.writeText(
+    'curl -fsSL https://bom.lackofabetter.work/generate_bom.sh | bash'
+  ).then(() => {
+    const orig = btn.innerHTML;
+    btn.innerHTML = '<span style="color:var(--green)">✔ Copied!</span>';
+    setTimeout(() => btn.innerHTML = orig, 2000);
+  });
+}
+</script>
+</body>
+</html>
