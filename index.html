@@ -515,6 +515,273 @@ footer a:hover { color: var(--ink); }
 .claude-note a { color: var(--ink-2); text-decoration: none; }
 .claude-note a:hover { color: var(--ink); }
 
+
+/* ─── BOM PARSER ────────────────────────────────────────────── */
+#parser { scroll-margin-top: 60px; }
+
+.drop-zone {
+  border: 1.5px dashed var(--border-hi);
+  border-radius: 10px;
+  padding: 48px 32px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color .2s, background .2s;
+  position: relative;
+}
+.drop-zone.drag-over {
+  border-color: var(--green);
+  background: color-mix(in srgb, var(--green) 5%, transparent);
+}
+.drop-zone input[type=file] {
+  position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
+}
+.drop-icon { font-size: 2rem; margin-bottom: 12px; display: block; }
+.drop-label {
+  font-size: .9rem; color: var(--ink-2); font-weight: 300; line-height: 1.6;
+}
+.drop-label strong { color: var(--ink); font-weight: 500; }
+.drop-formats {
+  margin-top: 10px;
+  font-family: var(--mono); font-size: .62rem;
+  letter-spacing: .08em; color: var(--ink-3);
+}
+
+/* report preview */
+.report-wrap { display: none; margin-top: 32px; }
+.report-wrap.visible { display: block; }
+
+.report-toolbar {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 20px; gap: 12px; flex-wrap: wrap;
+}
+.report-file-info {
+  display: flex; align-items: center; gap: 10px;
+}
+.report-badge {
+  font-family: var(--mono); font-size: .6rem;
+  letter-spacing: .1em; text-transform: uppercase;
+  padding: 3px 10px; border-radius: 3px;
+  border: 1px solid var(--border-hi);
+  color: var(--ink-2);
+}
+.report-badge.cdx  { color: var(--green);  border-color: var(--green-dim); }
+.report-badge.spdx { color: var(--blue);   border-color: #1a3a6a; }
+.report-badge.sbom { color: var(--blue);   border-color: #1a3a6a; }
+.report-badge.cbom { color: var(--green);  border-color: var(--green-dim); }
+.report-badge.hbom { color: var(--orange); border-color: #6a3a1a; }
+.report-filename {
+  font-family: var(--mono); font-size: .72rem;
+  color: var(--ink-2);
+}
+.report-actions { display: flex; gap: 8px; }
+.btn-clear {
+  font-family: var(--mono); font-size: .65rem;
+  letter-spacing: .06em; text-transform: uppercase;
+  background: transparent;
+  border: 1px solid var(--border-hi);
+  color: var(--ink-3); padding: 6px 14px;
+  border-radius: 4px; cursor: pointer;
+  transition: color .15s, border-color .15s;
+}
+.btn-clear:hover { color: var(--ink); border-color: var(--ink-3); }
+.btn-pdf {
+  font-family: var(--mono); font-size: .65rem;
+  letter-spacing: .06em; text-transform: uppercase;
+  background: transparent;
+  border: 1px solid var(--green-dim);
+  color: var(--green); padding: 6px 16px;
+  border-radius: 4px; cursor: pointer;
+  display: flex; align-items: center; gap: 6px;
+  transition: background .15s;
+}
+.btn-pdf:hover { background: color-mix(in srgb, var(--green) 8%, transparent); }
+
+/* report card */
+.report-card {
+  border: 1px solid var(--border);
+  border-radius: 8px; overflow: hidden;
+  background: var(--surface);
+}
+
+/* meta section */
+.r-section {
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--border);
+}
+.r-section:last-child { border-bottom: none; }
+.r-section-title {
+  font-family: var(--mono); font-size: .6rem;
+  letter-spacing: .15em; text-transform: uppercase;
+  color: var(--ink-3); margin-bottom: 14px;
+}
+.r-meta-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 12px;
+}
+.r-meta-item {}
+.r-meta-key {
+  font-family: var(--mono); font-size: .6rem;
+  letter-spacing: .08em; text-transform: uppercase;
+  color: var(--ink-3); margin-bottom: 3px;
+}
+.r-meta-val {
+  font-size: .84rem; color: var(--ink-2);
+  font-weight: 300; word-break: break-all;
+}
+.r-meta-val.highlight { color: var(--ink); font-weight: 400; }
+
+/* stats row */
+.r-stats {
+  display: flex; gap: 0;
+  border-bottom: 1px solid var(--border);
+}
+.r-stat {
+  flex: 1; padding: 18px 24px;
+  border-right: 1px solid var(--border);
+  text-align: center;
+}
+.r-stat:last-child { border-right: none; }
+.r-stat-num {
+  font-family: var(--display); font-size: 2.4rem;
+  letter-spacing: .04em; line-height: 1;
+  color: var(--ink); margin-bottom: 4px;
+}
+.r-stat-num.green  { color: var(--green); }
+.r-stat-num.blue   { color: var(--blue); }
+.r-stat-num.orange { color: var(--orange); }
+.r-stat-label {
+  font-family: var(--mono); font-size: .58rem;
+  letter-spacing: .1em; text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+/* component table */
+.r-table-wrap { overflow-x: auto; }
+.r-table {
+  width: 100%; border-collapse: collapse;
+  font-size: .8rem;
+}
+.r-table th {
+  font-family: var(--mono); font-size: .58rem;
+  letter-spacing: .12em; text-transform: uppercase;
+  color: var(--ink-3); font-weight: 400;
+  padding: 10px 16px; text-align: left;
+  border-bottom: 1px solid var(--border-hi);
+  white-space: nowrap;
+}
+.r-table td {
+  padding: 9px 16px;
+  border-bottom: 1px solid var(--border);
+  color: var(--ink-2); font-weight: 300;
+  vertical-align: middle;
+}
+.r-table tr:last-child td { border-bottom: none; }
+.r-table tr:hover td { background: color-mix(in srgb, var(--ink) 3%, transparent); }
+.r-table .td-name {
+  font-family: var(--mono); font-size: .75rem;
+  color: var(--ink); font-weight: 400;
+  max-width: 280px; word-break: break-all;
+}
+.r-table .td-version {
+  font-family: var(--mono); font-size: .72rem;
+  white-space: nowrap;
+}
+.type-pill {
+  font-family: var(--mono); font-size: .55rem;
+  letter-spacing: .07em; text-transform: uppercase;
+  border: 1px solid var(--border-hi);
+  padding: 1px 7px; border-radius: 3px;
+  color: var(--ink-3); white-space: nowrap;
+}
+.type-pill.library    { color: var(--blue);   border-color: #1a3a6a; }
+.type-pill.application{ color: var(--green);  border-color: var(--green-dim); }
+.type-pill.device     { color: var(--orange); border-color: #6a3a1a; }
+.type-pill.firmware   { color: var(--orange); border-color: #6a3a1a; }
+.type-pill.file       { color: var(--ink-2);  border-color: var(--border-hi); }
+
+/* vuln badges */
+.vsev {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-family: var(--mono); font-size: .58rem;
+  letter-spacing: .06em; text-transform: uppercase;
+  padding: 2px 8px; border-radius: 3px; font-weight: 500;
+}
+.vsev.critical { background: rgba(220,40,40,.15);  color: #f87171; }
+.vsev.high     { background: rgba(220,120,40,.12); color: var(--orange); }
+.vsev.medium   { background: rgba(220,180,40,.1);  color: #fbbf24; }
+.vsev.low      { background: rgba(100,180,100,.1); color: var(--green); }
+.vsev.none     { background: rgba(100,100,120,.1); color: var(--ink-3); }
+
+/* parse error */
+.parse-error {
+  border: 1px solid rgba(220,60,60,.3);
+  border-radius: 8px; padding: 20px 24px;
+  background: rgba(220,60,60,.06);
+  font-family: var(--mono); font-size: .78rem;
+  color: #f87171; line-height: 1.6;
+  display: none;
+}
+.parse-error.visible { display: block; }
+
+/* pagination */
+.r-pagination {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 20px;
+  border-top: 1px solid var(--border);
+  font-family: var(--mono); font-size: .65rem;
+  color: var(--ink-3);
+}
+.r-page-btns { display: flex; gap: 6px; }
+.r-page-btn {
+  background: transparent; border: 1px solid var(--border-hi);
+  color: var(--ink-2); padding: 4px 12px;
+  border-radius: 3px; cursor: pointer; font-family: var(--mono);
+  font-size: .62rem; transition: color .15s, border-color .15s;
+}
+.r-page-btn:hover:not(:disabled) { color: var(--ink); border-color: var(--ink-3); }
+.r-page-btn:disabled { opacity: .35; cursor: default; }
+
+/* ─── PRINT STYLES ──────────────────────────────────────────── */
+@media print {
+  nav, .hero, #bom-types, #formats, #how-it-works, #usage,
+  #made-with-claude, footer, .drop-zone, .report-toolbar,
+  .section:not(#parser), .divider { display: none !important; }
+
+  body { background: #fff !important; color: #111 !important; }
+  #parser { padding: 0 !important; border: none !important; }
+  .wrap { padding: 0 !important; max-width: 100% !important; }
+  .report-wrap { display: block !important; margin: 0 !important; }
+  .report-card { border: none !important; background: transparent !important; box-shadow: none !important; }
+
+  .r-section { padding: 12px 0 !important; border-bottom: 1px solid #e0e0e0 !important; }
+  .r-section-title { color: #666 !important; }
+  .r-meta-key { color: #888 !important; }
+  .r-meta-val { color: #333 !important; }
+
+  .r-stats { border-bottom: 1px solid #e0e0e0 !important; }
+  .r-stat { padding: 12px 0 !important; }
+  .r-stat-num { color: #111 !important; font-size: 1.8rem !important; }
+  .r-stat-label { color: #888 !important; }
+  .r-stat { border-right: 1px solid #e0e0e0 !important; }
+
+  .r-table th { color: #666 !important; border-bottom-color: #ccc !important; }
+  .r-table td { color: #333 !important; border-bottom-color: #eee !important; }
+  .r-table .td-name { color: #111 !important; }
+  .r-pagination { display: none !important; }
+
+  /* print all rows — JS sets this */
+  .r-table tr { display: table-row !important; }
+
+  @page { margin: 16mm; size: A4; }
+  h2.print-title {
+    font-family: Arial, sans-serif !important;
+    font-size: 18pt !important;
+    color: #111 !important;
+    margin-bottom: 16pt !important;
+    display: block !important;
+  }
+}
+
 /* ─── SCROLL REVEAL ─────────────────────────────────────────── */
 .reveal {
   opacity: 0; transform: translateY(20px);
@@ -546,6 +813,10 @@ footer a:hover { color: var(--ink); }
     <a href="#how-it-works">Pipeline</a>
     <a href="#usage">Usage</a>
     <a href="#made-with-claude">Claude</a>
+    <a href="#parser">Parser</a>
+    <a class="nav-gh" href="https://github.com/tanmaysheoran/bom" target="_blank" rel="noopener" aria-label="GitHub repository">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0 1 12 6.844a9.59 9.59 0 0 1 2.504.337c1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.02 10.02 0 0 0 22 12.017C22 6.484 17.522 2 12 2z"/></svg>
+    </a>
     <span class="nav-version">v2.0</span>
   </div>
 </nav>
@@ -921,6 +1192,91 @@ footer a:hover { color: var(--ink); }
   </div>
 </section>
 
+
+<!-- ─── BOM PARSER ─────────────────────────────────────────────── -->
+<section class="section" id="parser">
+  <div class="wrap">
+    <div class="eyebrow reveal">BOM Parser</div>
+    <h2 class="reveal">Parse &amp; preview any BOM file</h2>
+    <p class="section-desc reveal">
+      Drop any BOM file generated by this script — or any compatible CycloneDX / SPDX file.
+      Parsed entirely in your browser. Nothing is uploaded.
+    </p>
+
+    <!-- drop zone -->
+    <div class="drop-zone reveal" id="drop-zone">
+      <input type="file" id="bom-file-input" accept=".json,.xml,.tv,.spdx,.cdx"/>
+      <span class="drop-icon">📂</span>
+      <p class="drop-label"><strong>Drop a BOM file here</strong> or click to browse</p>
+      <p class="drop-formats">cdx.json &nbsp;·&nbsp; cdx.xml &nbsp;·&nbsp; spdx.json &nbsp;·&nbsp; spdx.tv &nbsp;·&nbsp; spdx tag-value</p>
+    </div>
+
+    <!-- parse error -->
+    <div class="parse-error" id="parse-error"></div>
+
+    <!-- report preview -->
+    <div class="report-wrap" id="report-wrap">
+
+      <!-- toolbar -->
+      <div class="report-toolbar">
+        <div class="report-file-info">
+          <span class="report-badge" id="r-format-badge">CDX</span>
+          <span class="report-badge" id="r-bom-type-badge">SBOM</span>
+          <span class="report-filename" id="r-filename"></span>
+        </div>
+        <div class="report-actions">
+          <button class="btn-clear" onclick="clearParser()">✕ Clear</button>
+          <button class="btn-pdf" onclick="downloadPDF()">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Download PDF
+          </button>
+        </div>
+      </div>
+
+      <!-- report card -->
+      <div class="report-card" id="report-card">
+
+        <!-- metadata -->
+        <div class="r-section">
+          <div class="r-section-title">Metadata</div>
+          <div class="r-meta-grid" id="r-meta"></div>
+        </div>
+
+        <!-- stats -->
+        <div class="r-stats" id="r-stats"></div>
+
+        <!-- component table -->
+        <div class="r-section">
+          <div class="r-section-title">Components</div>
+          <div class="r-table-wrap">
+            <table class="r-table">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Name</th>
+                  <th>Version</th>
+                  <th>Type</th>
+                  <th>License</th>
+                  <th id="th-extra"></th>
+                </tr>
+              </thead>
+              <tbody id="r-tbody"></tbody>
+            </table>
+          </div>
+          <div class="r-pagination" id="r-pagination">
+            <span id="r-page-info"></span>
+            <div class="r-page-btns">
+              <button class="r-page-btn" id="btn-prev" onclick="changePage(-1)">← Prev</button>
+              <button class="r-page-btn" id="btn-next" onclick="changePage(1)">Next →</button>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /report-card -->
+    </div><!-- /report-wrap -->
+  </div>
+</section>
+
 <!-- ─── FOOTER ────────────────────────────────────────────────── -->
 <footer>
   <div class="wrap">
@@ -957,6 +1313,373 @@ function copyCmd(btn) {
     setTimeout(() => btn.innerHTML = orig, 2000);
   });
 }
+
+// ════════════════════════════════════════════════════════════
+// BOM PARSER
+// Supports: CycloneDX JSON, CycloneDX XML, SPDX JSON, SPDX Tag-Value
+// ════════════════════════════════════════════════════════════
+const PAGE_SIZE = 50;
+let _allComponents = [];
+let _currentPage   = 0;
+let _isPrinting    = false;
+
+// ── Drop zone wiring ──────────────────────────────────────────
+const dropZone  = document.getElementById('drop-zone');
+const fileInput = document.getElementById('bom-file-input');
+
+dropZone.addEventListener('dragover',  e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault(); dropZone.classList.remove('drag-over');
+  const file = e.dataTransfer.files[0];
+  if (file) handleFile(file);
+});
+fileInput.addEventListener('change', e => {
+  if (e.target.files[0]) handleFile(e.target.files[0]);
+});
+
+function handleFile(file) {
+  const reader = new FileReader();
+  reader.onload = ev => parseBOM(ev.target.result, file.name);
+  reader.readAsText(file);
+  document.getElementById('r-filename').textContent = file.name;
+}
+
+// ── Main parser dispatcher ────────────────────────────────────
+function parseBOM(text, filename) {
+  hideError();
+  const ext = filename.toLowerCase();
+  try {
+    let result;
+    if (ext.endsWith('.xml'))                               result = parseCycloneDXXML(text);
+    else if (ext.endsWith('.tv') || ext.endsWith('.spdx'))  result = parseSPDXTagValue(text);
+    else {
+      const json = JSON.parse(text);
+      if (json.bomFormat === 'CycloneDX')                   result = parseCycloneDXJSON(json);
+      else if (json.spdxVersion)                            result = parseSPDXJSON(json);
+      else if (json.SPDXID)                                 result = parseSPDXJSON(json);
+      else                                                  result = parseCycloneDXJSON(json); // fallback
+    }
+    renderReport(result, filename);
+  } catch(e) {
+    showError('Could not parse file: ' + e.message + '\n\nMake sure it is a valid CycloneDX JSON/XML or SPDX JSON/tag-value file.');
+  }
+}
+
+// ── CycloneDX JSON parser ─────────────────────────────────────
+function parseCycloneDXJSON(j) {
+  const meta = j.metadata || {};
+  const comp = meta.component || {};
+  const vulns = j.vulnerabilities || [];
+
+  const components = (j.components || []).map(c => ({
+    name:     c.name    || '',
+    version:  c.version || '',
+    type:     c.type    || 'library',
+    licenses: extractCDXLicenses(c),
+    purl:     c.purl    || '',
+    extra:    c.purl ? { label: 'PURL', value: c.purl } : null,
+  }));
+
+  const typeGuess = guessBOMType(components, 'cdx');
+
+  return {
+    format:     'CycloneDX',
+    formatShort:'cdx',
+    specVersion: j.specVersion || '',
+    serialNumber: j.serialNumber || '',
+    bomType:    typeGuess,
+    metadata: {
+      'Name':        comp.name || '—',
+      'Version':     comp.version || '—',
+      'Generated':   meta.timestamp ? new Date(meta.timestamp).toLocaleString() : '—',
+      'Tool':        extractCDXTool(meta),
+      'Supplier':    comp.supplier?.name || '—',
+      'Spec':        'CycloneDX ' + (j.specVersion || ''),
+      'Serial No.':  j.serialNumber || '—',
+      'Components':  String(components.length),
+    },
+    components,
+    vulns: parseVulnsCDX(vulns),
+  };
+}
+
+function extractCDXLicenses(c) {
+  if (!c.licenses || !c.licenses.length) return '—';
+  return c.licenses.map(l => l.license?.id || l.license?.name || l.expression || '').filter(Boolean).join(', ') || '—';
+}
+function extractCDXTool(meta) {
+  const tools = meta.tools;
+  if (!tools) return '—';
+  if (Array.isArray(tools)) return tools.map(t => t.name || '').filter(Boolean).join(', ') || '—';
+  if (tools.components) return tools.components.map(t => t.name || '').filter(Boolean).join(', ') || '—';
+  return '—';
+}
+function parseVulnsCDX(vulns) {
+  const counts = { critical:0, high:0, medium:0, low:0, none:0 };
+  vulns.forEach(v => {
+    const s = (v.ratings?.[0]?.severity || 'none').toLowerCase();
+    if (counts[s] !== undefined) counts[s]++; else counts.none++;
+  });
+  return { total: vulns.length, counts };
+}
+
+// ── CycloneDX XML parser ──────────────────────────────────────
+function parseCycloneDXXML(text) {
+  const parser = new DOMParser();
+  const doc    = parser.parseFromString(text, 'application/xml');
+  if (doc.querySelector('parsererror')) throw new Error('Invalid XML');
+
+  const ns = doc.documentElement.namespaceURI || '';
+  const q  = (parent, tag) => parent.querySelector(tag) || parent.getElementsByTagNameNS(ns, tag)[0] || parent.getElementsByTagName(tag)[0];
+  const qq = (parent, tag) => [...(parent.querySelectorAll(tag).length ? parent.querySelectorAll(tag) : parent.getElementsByTagNameNS(ns, tag).length ? parent.getElementsByTagNameNS(ns, tag) : parent.getElementsByTagName(tag))];
+  const txt = (el) => el ? (el.textContent || '').trim() : '';
+
+  const meta   = q(doc, 'metadata');
+  const mComp  = meta ? q(meta, 'component') : null;
+  const toolEl = meta ? q(meta, 'tool') : null;
+
+  const components = qq(doc, 'component')
+    .filter(c => !meta || !meta.contains(c))
+    .map(c => ({
+      name:     txt(q(c, 'name')),
+      version:  txt(q(c, 'version')),
+      type:     c.getAttribute('type') || 'library',
+      licenses: qq(c, 'license').map(l => txt(q(l,'id')) || txt(q(l,'name'))).filter(Boolean).join(', ') || '—',
+      purl:     txt(q(c, 'purl')),
+      extra:    txt(q(c,'purl')) ? { label:'PURL', value: txt(q(c,'purl')) } : null,
+    }));
+
+  const specVersion = doc.documentElement.getAttribute('specVersion') || '';
+  const serialNumber = doc.documentElement.getAttribute('serialNumber') || '';
+  const typeGuess = guessBOMType(components, 'cdx');
+
+  return {
+    format:'CycloneDX', formatShort:'cdx', specVersion, serialNumber,
+    bomType: typeGuess,
+    metadata: {
+      'Name':       txt(mComp ? q(mComp,'name') : null) || '—',
+      'Version':    txt(mComp ? q(mComp,'version') : null) || '—',
+      'Generated':  txt(meta ? q(meta,'timestamp') : null) || '—',
+      'Tool':       toolEl ? (txt(q(toolEl,'name')) + (txt(q(toolEl,'version')) ? ' ' + txt(q(toolEl,'version')) : '')) : '—',
+      'Spec':       'CycloneDX ' + specVersion,
+      'Serial No.': serialNumber || '—',
+      'Components': String(components.length),
+    },
+    components,
+    vulns: { total:0, counts:{critical:0,high:0,medium:0,low:0,none:0} },
+  };
+}
+
+// ── SPDX JSON parser ──────────────────────────────────────────
+function parseSPDXJSON(j) {
+  const pkgs = j.packages || [];
+  const components = pkgs.map(p => ({
+    name:     p.name || '',
+    version:  p.versionInfo || '',
+    type:     (p.primaryPackagePurpose || 'library').toLowerCase(),
+    licenses: p.licenseConcluded && p.licenseConcluded !== 'NOASSERTION' ? p.licenseConcluded :
+              p.licenseDeclared  && p.licenseDeclared  !== 'NOASSERTION' ? p.licenseDeclared : '—',
+    purl:     (p.externalRefs || []).find(r => r.referenceType === 'purl')?.referenceLocator || '',
+    extra:    null,
+  }));
+  const typeGuess = guessBOMType(components, 'spdx');
+  const ci = j.creationInfo || {};
+  return {
+    format:'SPDX', formatShort:'spdx',
+    specVersion: j.spdxVersion || '',
+    serialNumber: j.documentNamespace || '',
+    bomType: typeGuess,
+    metadata: {
+      'Document Name':  j.name || '—',
+      'SPDX Version':   j.spdxVersion || '—',
+      'Data License':   j.dataLicense || '—',
+      'Created':        ci.created ? new Date(ci.created).toLocaleString() : '—',
+      'Creator':        (ci.creators || []).join(', ') || '—',
+      'Namespace':      (j.documentNamespace || '—').substring(0, 60) + ((j.documentNamespace || '').length > 60 ? '…' : ''),
+      'Packages':       String(pkgs.length),
+    },
+    components,
+    vulns: { total:0, counts:{critical:0,high:0,medium:0,low:0,none:0} },
+  };
+}
+
+// ── SPDX Tag-Value parser ─────────────────────────────────────
+function parseSPDXTagValue(text) {
+  const lines = text.split(/\r?\n/);
+  const get   = (tag) => { const l = lines.find(l => l.startsWith(tag + ':')); return l ? l.slice(tag.length + 1).trim() : ''; };
+
+  const components = [];
+  let current = null;
+  for (const line of lines) {
+    if (line.startsWith('PackageName:'))     { if (current) components.push(current); current = { name: line.slice(12).trim(), version:'', type:'library', licenses:'—', purl:'', extra:null }; }
+    else if (current) {
+      if (line.startsWith('PackageVersion:'))         current.version  = line.slice(15).trim();
+      else if (line.startsWith('PrimaryPackagePurpose:')) current.type = line.slice(22).trim().toLowerCase();
+      else if (line.startsWith('PackageVersion:'))     current.version  = line.slice(15).trim();
+      else if (line.startsWith('LicenseConcluded:'))   { const v = line.slice(17).trim(); if (v && v !== 'NOASSERTION') current.licenses = v; }
+      else if (line.startsWith('ExternalRef:') && line.includes('purl')) current.purl = line.split(/\s+/).pop();
+    }
+  }
+  if (current) components.push(current);
+
+  const typeGuess = guessBOMType(components, 'spdx');
+  return {
+    format:'SPDX', formatShort:'spdx',
+    specVersion: get('SPDXVersion'),
+    serialNumber: get('DocumentNamespace'),
+    bomType: typeGuess,
+    metadata: {
+      'Document Name': get('DocumentName')    || '—',
+      'SPDX Version':  get('SPDXVersion')     || '—',
+      'Data License':  get('DataLicense')     || '—',
+      'Created':       get('Created')         || '—',
+      'Creator':       get('Creator')         || '—',
+      'Namespace':     (get('DocumentNamespace') || '—').substring(0,60) + '…',
+      'Packages':      String(components.length),
+    },
+    components,
+    vulns: { total:0, counts:{critical:0,high:0,medium:0,low:0,none:0} },
+  };
+}
+
+// ── Guess BOM type from component types ───────────────────────
+function guessBOMType(components, fmt) {
+  const types = components.map(c => c.type.toLowerCase());
+  const hasDevice   = types.some(t => t === 'device' || t === 'firmware');
+  const hasCrypto   = types.some(t => t === 'file') ||
+    components.some(c => /openssl|tls|ssl|crypto|gpg|bcrypt|pkcs|libssl|keytool|x509/i.test(c.name));
+  if (hasDevice)  return 'HBOM';
+  if (hasCrypto)  return 'CBOM';
+  return 'SBOM';
+}
+
+// ── Render report ─────────────────────────────────────────────
+function renderReport(data, filename) {
+  // Badges
+  const fmtBadge  = document.getElementById('r-format-badge');
+  const typeBadge = document.getElementById('r-bom-type-badge');
+  fmtBadge.textContent  = data.format;
+  fmtBadge.className    = 'report-badge ' + data.formatShort;
+  typeBadge.textContent = data.bomType;
+  typeBadge.className   = 'report-badge ' + data.bomType.toLowerCase();
+
+  // Metadata
+  const metaEl = document.getElementById('r-meta');
+  metaEl.innerHTML = Object.entries(data.metadata).map(([k,v]) => `
+    <div class="r-meta-item">
+      <div class="r-meta-key">${k}</div>
+      <div class="r-meta-val${k === 'Name' || k === 'Document Name' ? ' highlight' : ''}">${v}</div>
+    </div>`).join('');
+
+  // Stats
+  const statsEl = document.getElementById('r-stats');
+  const stats = [
+    { num: data.components.length, label: 'Components', cls: '' },
+  ];
+  if (data.vulns.total > 0) {
+    stats.push({ num: data.vulns.total,             label: 'Vulnerabilities', cls: 'orange' });
+    stats.push({ num: data.vulns.counts.critical,   label: 'Critical',        cls: 'orange' });
+    stats.push({ num: data.vulns.counts.high,        label: 'High',            cls: 'orange' });
+  } else {
+    const types  = [...new Set(data.components.map(c => c.type.toLowerCase()))];
+    stats.push({ num: types.length, label: 'Types', cls: 'blue' });
+    const hasVer = data.components.filter(c => c.version && c.version !== 'N/A' && c.version !== 'unknown').length;
+    stats.push({ num: hasVer, label: 'Versioned', cls: 'green' });
+  }
+  statsEl.innerHTML = stats.map(s => `
+    <div class="r-stat">
+      <div class="r-stat-num ${s.cls}">${s.num}</div>
+      <div class="r-stat-label">${s.label}</div>
+    </div>`).join('');
+
+  // Extra column header
+  const extraHeader = data.components.some(c => c.extra);
+  document.getElementById('th-extra').textContent = extraHeader ? 'PURL' : '';
+
+  // Table pagination
+  _allComponents = data.components;
+  _currentPage   = 0;
+  renderPage();
+
+  // Show
+  document.getElementById('report-wrap').classList.add('visible');
+  document.getElementById('report-wrap').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function renderPage() {
+  const start = _currentPage * PAGE_SIZE;
+  const slice = _isPrinting ? _allComponents : _allComponents.slice(start, start + PAGE_SIZE);
+  const tbody = document.getElementById('r-tbody');
+  tbody.innerHTML = slice.map((c, i) => `
+    <tr>
+      <td class="td-version">${_isPrinting ? i+1 : start + i + 1}</td>
+      <td class="td-name">${esc(c.name)}</td>
+      <td class="td-version">${esc(c.version || '—')}</td>
+      <td><span class="type-pill ${c.type.toLowerCase()}">${esc(c.type)}</span></td>
+      <td style="font-size:.75rem">${esc(c.licenses || '—')}</td>
+      <td style="font-family:var(--mono);font-size:.62rem;color:var(--ink-3);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${c.extra ? esc(c.extra.value) : ''}</td>
+    </tr>`).join('');
+
+  const total = _allComponents.length;
+  const pages = Math.ceil(total / PAGE_SIZE);
+  const pageInfo = document.getElementById('r-page-info');
+  const btnPrev  = document.getElementById('btn-prev');
+  const btnNext  = document.getElementById('btn-next');
+  const pag      = document.getElementById('r-pagination');
+
+  if (total <= PAGE_SIZE) {
+    pag.style.display = 'none';
+  } else {
+    pag.style.display = 'flex';
+    pageInfo.textContent = `${start + 1}–${Math.min(start + PAGE_SIZE, total)} of ${total}`;
+    btnPrev.disabled = _currentPage === 0;
+    btnNext.disabled = _currentPage >= pages - 1;
+  }
+}
+
+function changePage(dir) {
+  const pages = Math.ceil(_allComponents.length / PAGE_SIZE);
+  _currentPage = Math.max(0, Math.min(_currentPage + dir, pages - 1));
+  renderPage();
+  document.getElementById('report-card').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ── PDF download ──────────────────────────────────────────────
+function downloadPDF() {
+  _isPrinting = true;
+  renderPage();           // render all rows
+  window.print();
+  setTimeout(() => {      // restore pagination after print dialog closes
+    _isPrinting = false;
+    renderPage();
+  }, 1000);
+}
+
+// ── Clear ─────────────────────────────────────────────────────
+function clearParser() {
+  document.getElementById('report-wrap').classList.remove('visible');
+  document.getElementById('bom-file-input').value = '';
+  hideError();
+  _allComponents = [];
+  _currentPage   = 0;
+}
+
+// ── Error helpers ─────────────────────────────────────────────
+function showError(msg) {
+  const el = document.getElementById('parse-error');
+  el.textContent = msg;
+  el.classList.add('visible');
+  document.getElementById('report-wrap').classList.remove('visible');
+}
+function hideError() {
+  document.getElementById('parse-error').classList.remove('visible');
+}
+
 </script>
 </body>
 </html>
